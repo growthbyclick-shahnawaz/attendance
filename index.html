@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AttendanceOS — Employee Check-In</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,300&display=swap" rel="stylesheet" />
+
+<style>
+/* ── Reset & Base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #0a0c0f;
+  --surface:    #111418;
+  --surface2:   #181c22;
+  --border:     #222830;
+  --border2:    #2e3540;
+  --text:       #e8edf5;
+  --text-muted: #6b7585;
+  --text-dim:   #3d4655;
+  --accent:     #00d4aa;
+  --accent-dim: rgba(0,212,170,.12);
+  --warn:       #ffb347;
+  --warn-dim:   rgba(255,179,71,.12);
+  --danger:     #ff5f6d;
+  --danger-dim: rgba(255,95,109,.12);
+  --success:    #4ade80;
+  --success-dim:rgba(74,222,128,.12);
+  --in-color:   #38bdf8;
+  --out-color:  #fb923c;
+  --radius:     12px;
+  --radius-sm:  6px;
+  --mono:       'Space Mono', monospace;
+  --sans:       'DM Sans', sans-serif;
+}
+
+html { font-size: 16px; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0 60px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+
+.logo {
+  font-family: var(--mono);
+  font-size: .85rem;
+  letter-spacing: .08em;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.logo-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50%      { opacity:.5; transform:scale(.7); }
+}
+
+.header-time {
+  font-family: var(--mono);
+  font-size: .78rem;
+  color: var(--text-muted);
+  text-align: right;
+  line-height: 1.5;
+}
+.header-time span { display: block; }
+.header-time .time-val { color: var(--text); font-size: .9rem; }
+
+/* ── Main container ───────────────────────────────────────────────────────── */
+main {
+  width: 100%;
+  max-width: 520px;
+  padding: 28px 16px 0;
+}
+
+/* ── Section titles ───────────────────────────────────────────────────────── */
+.section-label {
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .12em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+/* ── Card ─────────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 14px;
+  animation: fadeUp .35s ease both;
+}
+.card + .card { animation-delay: .05s; }
+.card:nth-child(3) { animation-delay: .1s; }
+.card:nth-child(4) { animation-delay: .15s; }
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(14px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.card-title {
+  font-weight: 700;
+  font-size: .85rem;
+  color: var(--text-muted);
+  letter-spacing: .04em;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.card-title svg { flex-shrink:0; }
+
+/* ── Form elements ────────────────────────────────────────────────────────── */
+.field { margin-bottom: 12px; }
+.field:last-child { margin-bottom: 0; }
+
+label {
+  display: block;
+  font-size: .78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+  letter-spacing: .03em;
+}
+label .req { color: var(--danger); margin-left: 2px; }
+
+select, input[type="text"], input[type="email"], textarea {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: .9rem;
+  padding: 11px 14px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  appearance: none;
+}
+select:focus, input:focus, textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+select[disabled], input[readonly] {
+  opacity: .65;
+  cursor: not-allowed;
+}
+select option { background: var(--surface2); }
+textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+.select-wrap { position: relative; }
+.select-wrap::after {
+  content: '';
+  position: absolute;
+  right: 14px; top: 50%; transform: translateY(-50%);
+  width: 0; height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid var(--text-muted);
+  pointer-events: none;
+}
+
+/* ── Type toggle ──────────────────────────────────────────────────────────── */
+.type-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.toggle-btn {
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: .85rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.toggle-btn:hover { border-color: var(--border); color: var(--text); }
+.toggle-btn.active-in  { border-color: var(--in-color);  background: rgba(56,189,248,.1);  color: var(--in-color); }
+.toggle-btn.active-out { border-color: var(--out-color); background: rgba(251,146,60,.1);  color: var(--out-color); }
+
+/* ── Camera area ──────────────────────────────────────────────────────────── */
+.camera-area {
+  background: var(--surface2);
+  border: 2px dashed var(--border2);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  position: relative;
+  aspect-ratio: 4/3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.camera-placeholder {
+  text-align: center;
+  color: var(--text-dim);
+}
+.camera-placeholder svg { margin-bottom: 8px; opacity: .5; }
+.camera-placeholder p { font-size: .82rem; }
+
+#videoEl, #canvasEl {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: none;
+}
+#photoPreview {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: none;
+}
+.camera-badge {
+  position: absolute;
+  top: 8px; right: 8px;
+  background: rgba(0,212,170,.9);
+  color: #000;
+  font-family: var(--mono);
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  padding: 3px 7px;
+  border-radius: 4px;
+  display: none;
+}
+
+.camera-controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 11px 18px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-family: var(--sans);
+  font-size: .85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+
+.btn-ghost {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text-muted);
+  flex: 1;
+}
+.btn-ghost:hover:not(:disabled) { border-color: var(--border); color: var(--text); }
+
+.btn-capture {
+  background: var(--surface2);
+  border: 1px solid var(--in-color);
+  color: var(--in-color);
+  flex: 2;
+}
+.btn-capture:hover:not(:disabled) {
+  background: rgba(56,189,248,.1);
+}
+
+.btn-submit {
+  width: 100%;
+  padding: 16px;
+  background: var(--accent);
+  color: #000;
+  font-size: .95rem;
+  font-weight: 700;
+  border-radius: var(--radius);
+  letter-spacing: .03em;
+  margin-top: 6px;
+  position: relative;
+  overflow: hidden;
+}
+.btn-submit::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,.15) 0%, transparent 60%);
+}
+.btn-submit:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+.btn-submit:active:not(:disabled) { transform: translateY(0); }
+.btn-submit.loading { pointer-events: none; }
+
+/* ── Note field (hidden by default) ──────────────────────────────────────── */
+.note-section {
+  display: none;
+  animation: fadeUp .25s ease both;
+}
+.note-section.visible { display: block; }
+
+.note-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--warn-dim);
+  border: 1px solid rgba(255,179,71,.3);
+  border-radius: var(--radius-sm);
+  padding: 11px 13px;
+  margin-bottom: 12px;
+  font-size: .82rem;
+  color: var(--warn);
+  line-height: 1.5;
+}
+.note-banner svg { flex-shrink: 0; margin-top: 1px; }
+
+/* ── Info row ─────────────────────────────────────────────────────────────── */
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.info-row:last-child { margin-bottom: 0; }
+.info-label {
+  font-size: .72rem;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  letter-spacing: .06em;
+  min-width: 72px;
+}
+.info-value {
+  font-size: .85rem;
+  color: var(--text);
+  font-weight: 500;
+  flex: 1;
+}
+.info-value.mono { font-family: var(--mono); font-size: .8rem; }
+
+/* ── Alert / Toast ────────────────────────────────────────────────────────── */
+.toast-stack {
+  position: fixed;
+  bottom: 20px; left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 480px;
+  z-index: 999;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.toast {
+  width: 100%;
+  padding: 13px 16px;
+  border-radius: var(--radius);
+  font-size: .85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: auto;
+  animation: slideUp .3s ease;
+  box-shadow: 0 4px 24px rgba(0,0,0,.5);
+  line-height: 1.4;
+}
+@keyframes slideUp {
+  from { opacity:0; transform:translateY(20px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.toast.error   { background: #2a1215; border: 1px solid rgba(255,95,109,.4);  color: #ff8a93; }
+.toast.success { background: #0d2117; border: 1px solid rgba(74,222,128,.4);  color: #4ade80; }
+.toast.warn    { background: #221a0a; border: 1px solid rgba(255,179,71,.4);  color: #ffb347; }
+
+/* ── Field error ──────────────────────────────────────────────────────────── */
+.field-error {
+  font-size: .75rem;
+  color: var(--danger);
+  margin-top: 5px;
+  display: none;
+}
+.field-error.show { display: block; }
+.field.invalid select,
+.field.invalid input,
+.field.invalid textarea {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-dim);
+}
+
+/* ── Success screen ───────────────────────────────────────────────────────── */
+#successScreen {
+  display: none;
+  text-align: center;
+  padding: 40px 24px;
+  animation: fadeUp .4s ease;
+}
+#successScreen.show { display: block; }
+.success-icon {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: var(--success-dim);
+  border: 2px solid var(--success);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px;
+}
+.success-title {
+  font-family: var(--mono);
+  font-size: 1.1rem;
+  color: var(--success);
+  margin-bottom: 8px;
+}
+.success-sub {
+  font-size: .85rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+.success-meta {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: left;
+  margin-bottom: 24px;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── Loading spinner ──────────────────────────────────────────────────────── */
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(0,0,0,.3);
+  border-top-color: #000;
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+  display: none;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading .spinner { display: block; }
+.loading .btn-text { display: none; }
+
+</style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────────────────── -->
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    ATTENDANCE<span style="color:var(--text-muted)">OS</span>
+  </div>
+  <div class="header-time">
+    <span id="liveClock" class="time-val">--:--:--</span>
+    <span id="liveDate">Loading…</span>
+  </div>
+</header>
+
+<!-- ── Main form ───────────────────────────────────────────────────────────── -->
+<main>
+
+  <!-- Form view -->
+  <div id="formView">
+
+    <!-- Employee Selection -->
+    <div class="card">
+      <div class="card-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        EMPLOYEE DETAILS
+      </div>
+
+      <div class="field" id="fieldEmployee">
+        <label>Select Employee <span class="req">*</span></label>
+        <div class="select-wrap">
+          <select id="employeeSelect">
+            <option value="">— Choose your name —</option>
+          </select>
+        </div>
+        <div class="field-error" id="errEmployee">Please select an employee.</div>
+      </div>
+
+      <div class="field">
+        <label>Employee ID</label>
+        <input type="text" id="empId" readonly placeholder="Auto-filled" />
+      </div>
+
+      <div class="field">
+        <label>Email Address</label>
+        <input type="email" id="empEmail" readonly placeholder="Auto-filled" />
+      </div>
+    </div>
+
+    <!-- Attendance Type -->
+    <div class="card">
+      <div class="card-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        MARK ATTENDANCE
+      </div>
+
+      <div class="type-toggle">
+        <button class="toggle-btn" id="btnIN" onclick="setType('IN')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          CHECK IN
+        </button>
+        <button class="toggle-btn" id="btnOUT" onclick="setType('OUT')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          CHECK OUT
+        </button>
+      </div>
+
+      <!-- Note section (conditionally shown) -->
+      <div class="note-section" id="noteSection" style="margin-top:14px;">
+        <div class="note-banner" id="noteBanner">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span id="noteBannerText">A note is required.</span>
+        </div>
+        <div class="field" id="fieldNote">
+          <label>Reason / Note <span class="req">*</span></label>
+          <textarea id="noteText" placeholder="Please provide a reason…" rows="3"></textarea>
+          <div class="field-error" id="errNote">Note is required for this attendance action.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Camera -->
+    <div class="card">
+      <div class="card-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        PHOTO CAPTURE <span class="req" style="font-size:.9em">*</span>
+      </div>
+
+      <div class="camera-area" id="cameraArea">
+        <div class="camera-placeholder" id="cameraPlaceholder">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <p>Camera preview will appear here</p>
+        </div>
+        <video id="videoEl" autoplay playsinline muted></video>
+        <canvas id="canvasEl"></canvas>
+        <img id="photoPreview" alt="Captured photo" />
+        <div class="camera-badge" id="cameraBadge">● LIVE</div>
+      </div>
+
+      <div class="camera-controls">
+        <button class="btn btn-ghost" id="btnRetake" onclick="retakePhoto()" style="display:none">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.9"/></svg>
+          Retake
+        </button>
+        <button class="btn btn-ghost" id="btnStartCam" onclick="startCamera()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          Open Camera
+        </button>
+        <button class="btn btn-capture" id="btnCapture" onclick="capturePhoto()" style="display:none">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+          Capture Photo
+        </button>
+      </div>
+      <div class="field-error" id="errPhoto" style="margin-top:6px;">Please capture a photo before submitting.</div>
+    </div>
+
+    <!-- Captured Info (auto data) -->
+    <div class="card" id="autoDataCard">
+      <div class="card-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        AUTO-CAPTURED DATA
+      </div>
+      <div class="info-row">
+        <span class="info-label">TIMESTAMP</span>
+        <span class="info-value mono" id="infoTimestamp">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">DEVICE</span>
+        <span class="info-value" id="infoDevice">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">IP ADDR</span>
+        <span class="info-value mono" id="infoIP">Captured on submit</span>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <button class="btn btn-submit" id="submitBtn" onclick="submitAttendance()">
+      <div class="spinner"></div>
+      <span class="btn-text">Submit Attendance</span>
+    </button>
+
+  </div><!-- /formView -->
+
+  <!-- Success screen -->
+  <div id="successScreen">
+    <div class="success-icon">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div class="success-title">ATTENDANCE RECORDED</div>
+    <div class="success-sub" id="successMsg">Your attendance has been saved successfully.</div>
+    <div class="success-meta" id="successMeta"></div>
+    <button class="btn btn-submit" onclick="resetForm()">Mark Another</button>
+  </div>
+
+</main>
+
+<!-- Toast container -->
+<div class="toast-stack" id="toastStack"></div>
+
+<script>
+// ── Config ─────────────────────────────────────────────────────────────────────
+// Change this to your backend URL when deploying
+const API_BASE = 'https://script.google.com/macros/s/AKfycbzTbHCHgUXJVcp_DGlJH02uKmzL5UrCSLgY-W38BlqTajrQ2cwUcTWd0eXRrUh_esduUg/exec';
+
+// ── State ──────────────────────────────────────────────────────────────────────
+let employees     = [];
+let currentType   = null;   // 'IN' | 'OUT'
+let capturedPhoto = null;   // base64 data-url
+let stream        = null;   // MediaStream
+
+// ── Clock ──────────────────────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('liveClock').textContent =
+    now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  document.getElementById('liveDate').textContent =
+    now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  document.getElementById('infoTimestamp').textContent =
+    now.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'medium' });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── Device info ────────────────────────────────────────────────────────────────
+function detectDevice() {
+  const ua = navigator.userAgent;
+  if (/iPhone|iPad|iPod/.test(ua))   return 'iOS Device';
+  if (/Android/.test(ua))            return 'Android Device';
+  if (/Windows/.test(ua))            return 'Windows PC';
+  if (/Mac/.test(ua))                return 'macOS';
+  return 'Unknown Device';
+}
+document.getElementById('infoDevice').textContent = detectDevice();
+
+// ── Load employees ─────────────────────────────────────────────────────────────
+async function loadEmployees() {
+
+  try {
+
+    const res = await fetch(`${API_BASE}?action=getEmployees`);
+
+    const data = await res.json();
+
+    employees = data;
+
+    const sel = document.getElementById('employeeSelect');
+
+    sel.innerHTML = '';
+
+    employees.forEach(emp => {
+
+      const opt = document.createElement('option');
+
+      opt.value = emp.empId;
+
+      opt.textContent = `${emp.empId} - ${emp.name}`;
+
+      sel.appendChild(opt);
+
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    showToast('Could not load employees', 'error');
+
+  }
+
+}
+
+// ── Employee selection → auto-fill ─────────────────────────────────────────────
+document.getElementById('employeeSelect').addEventListener('change', function () {
+  const emp = employees.find(e => e.id === this.value);
+  document.getElementById('empId').value    = emp ? emp.id    : '';
+  document.getElementById('empEmail').value = emp ? emp.email : '';
+  clearFieldError('fieldEmployee', 'errEmployee');
+  // Re-evaluate note requirement if type already chosen
+  if (currentType) evaluateNoteRule();
+});
+
+// ── Attendance type toggle ─────────────────────────────────────────────────────
+function setType(type) {
+  currentType = type;
+  document.getElementById('btnIN').className  = 'toggle-btn' + (type === 'IN'  ? ' active-in'  : '');
+  document.getElementById('btnOUT').className = 'toggle-btn' + (type === 'OUT' ? ' active-out' : '');
+  evaluateNoteRule();
+}
+
+// ── Note rule evaluation ───────────────────────────────────────────────────────
+function evaluateNoteRule() {
+  const now     = new Date();
+  const h       = now.getHours();
+  const m       = now.getMinutes();
+  const total   = h * 60 + m;
+  const sec     = document.getElementById('noteSection');
+  const banner  = document.getElementById('noteBannerText');
+
+  let needNote = false;
+  let msg      = '';
+
+  if (currentType === 'IN'  && total > 10 * 60 + 5) {
+    needNote = true;
+    msg = `Late check-in detected (${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')} — after 10:05 AM). A reason is required.`;
+  }
+  if (currentType === 'OUT' && total < 18 * 60) {
+    needNote = true;
+    msg = `Early departure detected (${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')} — before 6:00 PM). A reason is required.`;
+  }
+
+  if (needNote) {
+    sec.classList.add('visible');
+    banner.textContent = msg;
+  } else {
+    sec.classList.remove('visible');
+    document.getElementById('noteText').value = '';
+    clearFieldError('fieldNote', 'errNote');
+  }
+}
+
+// ── Camera ─────────────────────────────────────────────────────────────────────
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+    const video = document.getElementById('videoEl');
+    video.srcObject = stream;
+    video.style.display    = 'block';
+    document.getElementById('cameraPlaceholder').style.display = 'none';
+    document.getElementById('cameraBadge').style.display       = 'block';
+    document.getElementById('btnStartCam').style.display       = 'none';
+    document.getElementById('btnCapture').style.display        = 'flex';
+    clearFieldError(null, 'errPhoto');
+  } catch (err) {
+    showToast('Camera access denied. Please allow camera permission.', 'error');
+  }
+}
+
+function capturePhoto() {
+  const video  = document.getElementById('videoEl');
+  const canvas = document.getElementById('canvasEl');
+  canvas.width  = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  capturedPhoto = canvas.toDataURL('image/jpeg', 0.85);
+
+  // Show preview
+  const preview = document.getElementById('photoPreview');
+  preview.src            = capturedPhoto;
+  preview.style.display  = 'block';
+  video.style.display    = 'none';
+  canvas.style.display   = 'none';
+  document.getElementById('cameraBadge').style.display  = 'none';
+  document.getElementById('btnCapture').style.display   = 'none';
+  document.getElementById('btnRetake').style.display    = 'flex';
+
+  // Stop stream
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  clearFieldError(null, 'errPhoto');
+}
+
+function retakePhoto() {
+  capturedPhoto = null;
+  document.getElementById('photoPreview').style.display = 'none';
+  document.getElementById('btnRetake').style.display    = 'none';
+  document.getElementById('btnStartCam').style.display  = 'flex';
+  document.getElementById('cameraPlaceholder').style.display = 'flex';
+}
+
+// ── Validation helpers ─────────────────────────────────────────────────────────
+function showFieldError(fieldId, errId) {
+  if (fieldId) document.getElementById(fieldId)?.classList.add('invalid');
+  document.getElementById(errId).classList.add('show');
+}
+function clearFieldError(fieldId, errId) {
+  if (fieldId) document.getElementById(fieldId)?.classList.remove('invalid');
+  document.getElementById(errId)?.classList.remove('show');
+}
+
+// ── Submit ─────────────────────────────────────────────────────────────────────
+async function submitAttendance() {
+  let valid = true;
+
+  // Employee
+  const sel = document.getElementById('employeeSelect');
+  if (!sel.value) { showFieldError('fieldEmployee', 'errEmployee'); valid = false; }
+  else clearFieldError('fieldEmployee', 'errEmployee');
+
+  // Type
+  if (!currentType) { showToast('Please select Check IN or Check OUT.', 'warn'); valid = false; }
+
+  // Note rule (re-evaluate to be safe)
+  const noteVisible = document.getElementById('noteSection').classList.contains('visible');
+  if (noteVisible) {
+    const note = document.getElementById('noteText').value.trim();
+    if (!note) { showFieldError('fieldNote', 'errNote'); valid = false; }
+    else clearFieldError('fieldNote', 'errNote');
+  }
+
+  // Photo
+  if (!capturedPhoto) { showFieldError(null, 'errPhoto'); valid = false; }
+  else clearFieldError(null, 'errPhoto');
+
+  if (!valid) return;
+
+  // Build payload
+  const emp = employees.find(e => e.id === sel.value);
+  const payload = {
+    employeeId:       emp.id,
+    employeeName:     emp.name,
+    email:            emp.email,
+    type:             currentType,
+    note:             document.getElementById('noteText').value.trim(),
+    photo:            capturedPhoto,
+    deviceType:       detectDevice(),
+    clientTimestamp:  new Date().toISOString(),
+  };
+
+  // Set loading
+  const btn = document.getElementById('submitBtn');
+  btn.classList.add('loading');
+
+  try {
+    const res  = await fetch(API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: new URLSearchParams(payload),
+    });
+    const data = await res.json();
+
+    if (!data.success) {
+      showToast(data.message, 'error');
+      return;
+    }
+
+    // Show success screen
+    const r = data.data;
+    document.getElementById('successMsg').textContent =
+      `${r.type === 'IN' ? 'Check-in' : 'Check-out'} recorded for ${r.employeeName}.`;
+    document.getElementById('successMeta').innerHTML = `
+      <div class="info-row"><span class="info-label">NAME</span><span class="info-value">${r.employeeName}</span></div>
+      <div class="info-row"><span class="info-label">EMP ID</span><span class="info-value mono">${r.employeeId}</span></div>
+      <div class="info-row"><span class="info-label">TYPE</span><span class="info-value" style="color:${r.type==='IN'?'var(--in-color)':'var(--out-color)'};font-weight:700">${r.type}</span></div>
+      <div class="info-row"><span class="info-label">TIME</span><span class="info-value mono">${new Date(r.timestamp).toLocaleString()}</span></div>
+      <div class="info-row"><span class="info-label">IP</span><span class="info-value mono">${r.ipAddress}</span></div>
+      ${r.note ? `<div class="info-row"><span class="info-label">NOTE</span><span class="info-value">${r.note}</span></div>` : ''}
+    `;
+    document.getElementById('formView').style.display    = 'none';
+    document.getElementById('successScreen').classList.add('show');
+
+  } catch (err) {
+    showToast('Network error. Please check if the backend is running.', 'error');
+    console.error(err);
+  } finally {
+    btn.classList.remove('loading');
+  }
+}
+
+// ── Reset ──────────────────────────────────────────────────────────────────────
+function resetForm() {
+  document.getElementById('employeeSelect').value = '';
+  document.getElementById('empId').value          = '';
+  document.getElementById('empEmail').value       = '';
+  currentType   = null;
+  capturedPhoto = null;
+  document.getElementById('btnIN').className  = 'toggle-btn';
+  document.getElementById('btnOUT').className = 'toggle-btn';
+  document.getElementById('noteSection').classList.remove('visible');
+  document.getElementById('noteText').value        = '';
+  document.getElementById('photoPreview').style.display    = 'none';
+  document.getElementById('btnRetake').style.display       = 'none';
+  document.getElementById('btnStartCam').style.display     = 'flex';
+  document.getElementById('btnCapture').style.display      = 'none';
+  document.getElementById('cameraPlaceholder').style.display = 'flex';
+  document.getElementById('cameraBadge').style.display     = 'none';
+  document.getElementById('formView').style.display        = 'block';
+  document.getElementById('successScreen').classList.remove('show');
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────────
+function showToast(msg, type = 'error', duration = 4000) {
+  const icons = {
+    error:   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+    success: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>',
+    warn:    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  };
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `${icons[type] || ''} <span>${msg}</span>`;
+  document.getElementById('toastStack').appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; setTimeout(() => t.remove(), 300); }, duration);
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────────
+loadEmployees();
+</script>
+</body>
+</html>
