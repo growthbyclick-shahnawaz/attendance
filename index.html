@@ -884,13 +884,15 @@ if (data.status !== 'ok') {
   return;
 }
 
-    // Show success screenshowToast('Attendance Submitted Successfully', 'success');
+showToast('Attendance Submitted Successfully', 'success');
 
 setTimeout(() => {
 
   resetForm();
 
 }, 1200);
+
+return;
 
 } catch (err) {
 
