@@ -647,9 +647,70 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
 <div class="toast-stack" id="toastStack"></div>
 
 <script>
+
+  const params = new URLSearchParams(window.location.search);
+
+const token = params.get('token');
+
+const time = params.get('time');
+
+if (!token || !time) {
+
+  document.body.innerHTML = `
+    <div style="
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+      background:#000;
+      color:#fff;
+      font-size:32px;
+      font-family:sans-serif;
+      text-align:center;
+      padding:20px;
+    ">
+      INVALID ACCESS<br>
+      PLEASE SCAN QR AGAIN
+    </div>
+  `;
+
+  throw new Error('Invalid Access');
+
+}
+
+const currentTime = new Date().getTime();
+
+const diff = currentTime - parseInt(time);
+
+const TWO_MINUTES = 2 * 60 * 1000;
+
+if (diff > TWO_MINUTES) {
+
+  document.body.innerHTML = `
+    <div style="
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+      background:#000;
+      color:#ff4d4d;
+      font-size:32px;
+      font-family:sans-serif;
+      text-align:center;
+      padding:20px;
+    ">
+      QR EXPIRED<br>
+      PLEASE SCAN AGAIN
+    </div>
+  `;
+
+  throw new Error('QR Expired');
+
+}
+  
 // ── Config ─────────────────────────────────────────────────────────────────────
 // Change this to your backend URL when deploying
-const API_BASE = 'https://script.google.com/macros/s/AKfycbx0ZZy9Q81rrorcZtbwqC6Y3d-aGhwpogMF-7BInSZuQdmmzDaH-NmJ1bZK3N2kZg2uAg/exec';
+const API_BASE = 'https://script.google.com/macros/s/AKfycbzl921-YoBtjN7B_W1IURg5_GUrxKbn0ls_Tn4yIX_c2OfLB_thKWkPDDbkdefPT7QaAw/exec';
 
 // ── State ──────────────────────────────────────────────────────────────────────
 let employees     = [];
