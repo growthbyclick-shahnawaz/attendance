@@ -690,7 +690,7 @@ async function loadEmployees() {
   method: 'GET',
   mode: 'cors'
 });
-
+const data = await res.json();
 
     employees = data;
 
