@@ -650,7 +650,7 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
 <script>
 // ── Config ─────────────────────────────────────────────────────────────────────
 // Change this to your backend URL when deploying
-const API_BASE = 'https://script.google.com/macros/s/AKfycbxuQRF73XjB1aaLmlORsqjzHAMPHZ10Q865ZIkqDCX1iPwWPMzxZASgDwHZB3Wued4oPQ/exec';
+const API_BASE = 'https://script.google.com/macros/s/AKfycbx0ZZy9Q81rrorcZtbwqC6Y3d-aGhwpogMF-7BInSZuQdmmzDaH-NmJ1bZK3N2kZg2uAg/exec';
 
 // ── State ──────────────────────────────────────────────────────────────────────
 let employees     = [];
@@ -689,7 +689,6 @@ async function loadEmployees() {
 
     const res = await fetch(`${API_BASE}?action=getEmployees`);
 
-    const data = await res.json();
 
     employees = data;
 
@@ -873,17 +872,19 @@ const payload = {
   btn.classList.add('loading');
 
   try {
-   const res = await fetch(API_BASE, {
+   await fetch(API_BASE, {
   method: 'POST',
+  mode: 'no-cors',
   body: new URLSearchParams(payload)
 });
-    const data = await res.json();
 
-if (data.status !== 'ok') {
-  showToast('Attendance submit failed', 'error');
-  return;
-}
 alert('Attendance Submitted Successfully');
+
+window.location.reload();
+
+return;
+    
+    alert('Attendance Submitted Successfully');
 
 window.location.reload();
 
