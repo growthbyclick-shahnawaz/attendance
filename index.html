@@ -884,31 +884,13 @@ if (data.status !== 'ok') {
   return;
 }
 
-    // Show success screen
-document.getElementById('successMsg').textContent =
-  `Attendance recorded successfully.`;
+    // Show success screenshowToast('Attendance Submitted Successfully', 'success');
 
-document.getElementById('successMeta').innerHTML = `
-  <div class="info-row">
-    <span class="info-label">EMPLOYEE</span>
-    <span class="info-value">${emp.name}</span>
-  </div>
+setTimeout(() => {
 
-  <div class="info-row">
-    <span class="info-label">EMP ID</span>
-    <span class="info-value mono">${emp.empId}</span>
-  </div>
+  resetForm();
 
-  <div class="info-row">
-    <span class="info-label">TYPE</span>
-    <span class="info-value">${currentType}</span>
-  </div>
-`;
-showToast('Attendance Submitted Successfully', 'success');
-document.getElementById('formView').style.display = 'none';
-
-document.getElementById('successScreen')
-  .classList.add('show');
+}, 1200);
 
 } catch (err) {
 
@@ -924,6 +906,7 @@ document.getElementById('successScreen')
 // ── Reset ──────────────────────────────────────────────────────────────────────
 function resetForm() {
   document.getElementById('employeeSelect').value = '';
+  employees.length && loadEmployees();
   document.getElementById('empId').value          = '';
   document.getElementById('empEmail').value       = '';
   currentType   = null;
