@@ -883,7 +883,11 @@ if (data.status !== 'ok') {
   showToast('Attendance submit failed', 'error');
   return;
 }
+alert('Attendance Submitted Successfully');
 
+window.location.reload();
+
+return;
 showToast('Attendance Submitted Successfully', 'success');
 
 setTimeout(() => {
