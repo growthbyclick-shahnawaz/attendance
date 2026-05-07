@@ -686,7 +686,10 @@ async function loadEmployees() {
 
   try {
 
-    const res = await fetch(`${API_BASE}?action=getEmployees`);
+    const res = await fetch(`${API_BASE}?action=getEmployees`, {
+  method: 'GET',
+  mode: 'cors'
+});
 
 
     employees = data;
