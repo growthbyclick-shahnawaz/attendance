@@ -650,7 +650,7 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
 <script>
 // ── Config ─────────────────────────────────────────────────────────────────────
 // Change this to your backend URL when deploying
-const API_BASE = 'https://script.google.com/macros/s/AKfycbzTbHCHgUXJVcp_DGlJH02uKmzL5UrCSLgY-W38BlqTajrQ2cwUcTWd0eXRrUh_esduUg/exec';
+const API_BASE = 'https://script.google.com/macros/s/AKfycbxS01_p1oqLfGbW0jh0MhA3t1DUAPwAVVDxq4cQa_HXLDKx8jPLUTo_qMQMV5QMN3-8uA/exec';
 
 // ── State ──────────────────────────────────────────────────────────────────────
 let employees     = [];
@@ -721,9 +721,13 @@ async function loadEmployees() {
 
 // ── Employee selection → auto-fill ─────────────────────────────────────────────
 document.getElementById('employeeSelect').addEventListener('change', function () {
-  const emp = employees.find(e => e.id === this.value);
-  document.getElementById('empId').value    = emp ? emp.id    : '';
-  document.getElementById('empEmail').value = emp ? emp.email : '';
+const emp = employees.find(e => e.empId === this.value);
+
+document.getElementById('empId').value =
+  emp ? emp.empId : '';
+
+document.getElementById('empEmail').value =
+  emp ? emp.email : '';
   clearFieldError('fieldEmployee', 'errEmployee');
   // Re-evaluate note requirement if type already chosen
   if (currentType) evaluateNoteRule();
@@ -853,49 +857,58 @@ async function submitAttendance() {
   if (!valid) return;
 
   // Build payload
-  const emp = employees.find(e => e.id === sel.value);
-  const payload = {
-    employeeId:       emp.id,
-    employeeName:     emp.name,
-    email:            emp.email,
-    type:             currentType,
-    note:             document.getElementById('noteText').value.trim(),
-    photo:            capturedPhoto,
-    deviceType:       detectDevice(),
-    clientTimestamp:  new Date().toISOString(),
-  };
+const emp = employees.find(e => e.empId === sel.value);
+
+const payload = {
+  empId:      emp.empId,
+  mode:       currentType,
+  note:       document.getElementById('noteText').value.trim(),
+  photo:      capturedPhoto,
+  source:     'WEBAPP',
+  deviceId:   detectDevice()
+};
 
   // Set loading
   const btn = document.getElementById('submitBtn');
   btn.classList.add('loading');
 
   try {
-    const res  = await fetch(API_BASE, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: new URLSearchParams(payload),
-    });
+   const res = await fetch(API_BASE, {
+  method: 'POST',
+  body: new URLSearchParams(payload)
+});
     const data = await res.json();
 
-    if (!data.success) {
-      showToast(data.message, 'error');
-      return;
-    }
+if (data.status !== 'ok') {
+  showToast('Attendance submit failed', 'error');
+  return;
+}
 
     // Show success screen
-    const r = data.data;
-    document.getElementById('successMsg').textContent =
-      `${r.type === 'IN' ? 'Check-in' : 'Check-out'} recorded for ${r.employeeName}.`;
-    document.getElementById('successMeta').innerHTML = `
-      <div class="info-row"><span class="info-label">NAME</span><span class="info-value">${r.employeeName}</span></div>
-      <div class="info-row"><span class="info-label">EMP ID</span><span class="info-value mono">${r.employeeId}</span></div>
-      <div class="info-row"><span class="info-label">TYPE</span><span class="info-value" style="color:${r.type==='IN'?'var(--in-color)':'var(--out-color)'};font-weight:700">${r.type}</span></div>
-      <div class="info-row"><span class="info-label">TIME</span><span class="info-value mono">${new Date(r.timestamp).toLocaleString()}</span></div>
-      <div class="info-row"><span class="info-label">IP</span><span class="info-value mono">${r.ipAddress}</span></div>
-      ${r.note ? `<div class="info-row"><span class="info-label">NOTE</span><span class="info-value">${r.note}</span></div>` : ''}
-    `;
-    document.getElementById('formView').style.display    = 'none';
-    document.getElementById('successScreen').classList.add('show');
+document.getElementById('successMsg').textContent =
+  `Attendance recorded successfully.`;
+
+document.getElementById('successMeta').innerHTML = `
+  <div class="info-row">
+    <span class="info-label">EMPLOYEE</span>
+    <span class="info-value">${emp.name}</span>
+  </div>
+
+  <div class="info-row">
+    <span class="info-label">EMP ID</span>
+    <span class="info-value mono">${emp.empId}</span>
+  </div>
+
+  <div class="info-row">
+    <span class="info-label">TYPE</span>
+    <span class="info-value">${currentType}</span>
+  </div>
+`;
+
+document.getElementById('formView').style.display = 'none';
+
+document.getElementById('successScreen')
+  .classList.add('show');
 
   } catch (err) {
     showToast('Network error. Please check if the backend is running.', 'error');
