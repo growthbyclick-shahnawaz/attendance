@@ -650,7 +650,7 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
 <script>
 // ── Config ─────────────────────────────────────────────────────────────────────
 // Change this to your backend URL when deploying
-const API_BASE = 'https://script.google.com/macros/s/AKfycbxS01_p1oqLfGbW0jh0MhA3t1DUAPwAVVDxq4cQa_HXLDKx8jPLUTo_qMQMV5QMN3-8uA/exec';
+const API_BASE = 'https://script.google.com/macros/s/AKfycbzVFi7gvLzsVvr5xrQFilCg8I5lgzN1KUT_cQP9YdT-pZDoS0CUWbGrTBKowb9-bFoR9w/exec';
 
 // ── State ──────────────────────────────────────────────────────────────────────
 let employees     = [];
@@ -904,18 +904,20 @@ document.getElementById('successMeta').innerHTML = `
     <span class="info-value">${currentType}</span>
   </div>
 `;
-
+showToast('Attendance Submitted Successfully', 'success');
 document.getElementById('formView').style.display = 'none';
 
 document.getElementById('successScreen')
   .classList.add('show');
 
-  } catch (err) {
-    showToast('Network error. Please check if the backend is running.', 'error');
-    console.error(err);
-  } finally {
-    btn.classList.remove('loading');
-  }
+} catch (err) {
+
+  console.error(err);
+
+} finally {
+
+  btn.classList.remove('loading');
+
 }
 
 // ── Reset ──────────────────────────────────────────────────────────────────────
